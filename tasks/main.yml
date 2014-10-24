@@ -41,6 +41,7 @@
       or (ansible_distribution_version == '13.10' and cgroup_lite_result|changed)"
 
 - name: Wait for instance to come online
+  sudo: false
   local_action:
     module: wait_for
     host: "{{ ansible_ssh_host|default(inventory_hostname) }}"
@@ -70,4 +71,16 @@
 - name: Change ufw default forward policy from drop to accept
   lineinfile: dest=/etc/default/ufw regexp="^DEFAULT_FORWARD_POLICY=" line="DEFAULT_FORWARD_POLICY=\"ACCEPT\""
   when: ufw_default_exists.stat.exists
+
+- name: Install docker client dependencies
+  apt: name={{item}} state=present update_cache=yes
+  with_items:
+    - python-pip
+    - python-dev
+
+- name: Install docker client
+  pip: name={{item}}
+  with_items:
+    - docker-py
+    - httplib2
 
