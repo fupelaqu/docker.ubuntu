@@ -2,7 +2,7 @@
 # tasks file for docker.ubuntu
 - name: Fail if not a new release of Ubuntu
   fail: msg="{{ ansible_distribution_version }} is not an acceptable version of Ubuntu for this role"
-  when: "ansible_distribution_version not in ['12.04', '13.04', '13.10', '14.04']"
+  when: "ansible_distribution_version not in ['12.04', '13.04', '13.10', '14.04', '14.10']"
 
 - name: Install raring kernel onto 12.04
   apt:
@@ -63,6 +63,15 @@
 - name: Install Docker
   apt: pkg=lxc-docker
   notify: "Start Docker"
+
+- name: Check if /etc/updatedb.conf exists
+  stat: path=/etc/updatedb.conf
+  register: updatedb_conf_exists
+
+- name: Ensure updatedb does not index /var/lib/docker
+  shell: >
+    ex -s -c '/PRUNEPATHS=/v:/var/lib/docker:s:"$: /var/lib/docker"' -c 'wq' /etc/updatedb.conf
+  when: updatedb_conf_exists.stat.exists
 
 - name: Check if /etc/default/ufw exists
   stat: path=/etc/default/ufw
