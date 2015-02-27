@@ -4,29 +4,37 @@ docker_ubuntu
 Installs Docker on a version higher than Ubuntu 12.04.
 This role differs from other roles in that it specifically follows docker.io installation instructions for each Ubuntu version, 12.04 or 13.04+.
 
-**Please see [this playbook](https://github.com/angstwad/ansible-docker-rackspace) for an example of how to utilize this role.**
+**Note**: This role now defaults to installing the lxc-docker package, the latest package from the docker.io repository.  There have been recent changes to the "interface" of this role, so to speak, and the changes are breaking for those using in a parameterize
 
-This is an example playbook in which I call two playbooks to launch and display information about a Rackspace Cloud server, on top of which I use the *docker_ubuntu* role to install Docker.
+**Example Play**:
 ```
-# Install to an instance running Ubuntu 12.04
-- include: rax-servers.yml
-  vars:
-    image: "ubuntu-1204-lts-precise-pangolin"
-
-- name: Install pycurl
-  hosts: docker
-  gather_facts: no
-  tasks:
-    - name: Install pycurl
-      apt: pkg=python-pycurl update_cache=yes cache_valid_time=600
-
-- name: Install Docker on Rax Server
+---
+- name: Run docker.ubuntu
   hosts: docker
   roles:
-    - angstwad.docker_ubuntu
-
-- include: rax-servers-info.yml
+    - docker.ubuntu
 ```
+
+**Please see [this playbook](https://github.com/angstwad/ansible-docker-rackspace) as a more advanced example of how to utilize this role.**
+
+Applying the role to servers is pretty simple:
+```
+- name: Install Docker on Rax Server
+  hosts: all
+  roles:
+    - angstwad.docker_ubuntu
+```
+
+Overriding the role's default variables is also pretty straightforward:
+```
+- name: Install Docker on Rax Server
+  hosts: all
+  roles:
+    - role: angstwad.docker_ubuntu
+      ssh_port: 2222
+      kernel_pkg_state: present
+```
+
 
 Requirements
 ------------
@@ -36,16 +44,34 @@ Requires python-pycurl for apt modules.
 Role Variables
 --------------
 
-These are the defaults, which can be set to present to prevent a reboot if the latest linux-image-extra, cgroup-lite packages are already installed
+These are the defaults, which can be set to present to prevent a reboot if the latest linux-image-extra, cgroup-lite packages are already installed.  
 The following role variables are defined:
 
 ```
-# Set to present to prevent a reboot if the latest linux-image-extra is already installed
+# lxc-docker is the default
+docker_pkg_name: lxc-docker
+# docker_pgk_name: docker.io
+# Change these to 'present' if you're running Ubuntu 12.04-13.10 and are fine with less-than-latest packages
 kernel_pkg_state: latest
-# Set to present to prevent a reboot if the latest cgroup-lite is already installed
 cgroup_lite_pkg_state: latest
-# Set to the default port that ssh is running on.  Only used if ansible_ssh_port is not defined.
+# Important if running Ubuntu 12.04-13.10 and ssh on a non-standard port
 ssh_port: 22
+# Place to get apt repository key
+apt_key_url: http://get.docker.io/gpg
+# apt repository key signature
+apt_key_sig: A88D21E9
+# Name of the apt repository for docker
+apt_repository: deb http://get.docker.io/ubuntu docker main
+# The following help expose a docker port or to add additional options when running docker
+# The default is to not use any special options; see docker_opts
+#docker_host_ip: 0.0.0.0
+#docker_host_port: 2375
+docker_opts: ""
+#docker_opts: "-H unix:// -H tcp://{{ docker_host_ip }}:{{ docker_host_port }}"
+#docker_version: 1.2.0
+# Want to export the docker host?  You'll need to uncomment the docker_host_ip, port, opts
+export_docker_host: false
+
 ```
 
 Dependencies
