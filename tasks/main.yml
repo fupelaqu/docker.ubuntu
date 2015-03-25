@@ -3,7 +3,7 @@
 - name: Fail if not a new release of Ubuntu
   fail: msg="{{ ansible_distribution_version }} is not an acceptable version of Ubuntu for this role"
   when: "ansible_distribution_version not in ['12.04', '13.04', '13.10', '14.04', '14.10']"
-  
+
 - name: Install raring kernel onto 12.04
   apt:
     pkg: "{{ item }}"
@@ -65,7 +65,7 @@
     state: present
 
 - name: Install (or update) docker package
-  apt: 
+  apt:
     name: "{{ docker_pkg_name }}"
     state: latest
     update_cache: yes
@@ -83,9 +83,9 @@
   when: "export_docker_host"
 
 - name: Fix DNS in docker.io
-  lineinfile: 
-    dest: /etc/default/docker 
-    regexp: "DOCKER_OPTS=" 
+  lineinfile:
+    dest: /etc/default/docker
+    regexp: "DOCKER_OPTS="
     line: 'DOCKER_OPTS="--dns {{ ansible_docker0.ipv4.address }}"'
   register: dns_fix
   notify: Restart dockerio
@@ -94,16 +94,19 @@
 - meta: flush_handlers
   when: "dns_fix|changed"
 
-- pause: 
+- pause:
     seconds: 1
   when: "dns_fix|changed"
-  
+
 
 - name: Install docker client dependencies
   apt: name={{item}} state=latest update_cache=yes cache_valid_time=600
   with_items:
-    - python-pip
     - python-dev
+    - python-pip
+
+- name: Update pip
+  shell: easy_install -U pip
 
 - name: Install docker client
   pip: name={{item}}
